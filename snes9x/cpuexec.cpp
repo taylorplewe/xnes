@@ -272,8 +272,8 @@ void S9xMainLoop (void)
 		if (CPU.Flags & SCAN_KEYS_FLAG)
 			break;
 
-		register uint8				Op;
-		register Opcode				*Opcodes;
+		uint8				Op;
+		Opcode				*Opcodes;
 
 		if (CPU.PCBase)
 		{

@@ -6,5 +6,5 @@ mkdir -p output
 # time ./buildww || exit 1
 # cd ..
 cd snes9x/sdl
-time ./buildhtml || exit 1
+./buildhtml
 cd ../..

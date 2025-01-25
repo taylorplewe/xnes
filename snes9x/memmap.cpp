@@ -1988,13 +1988,12 @@ bool8 CMemory::LoadGNEXT (const char *cartA, const char *cartB)
 bool8 CMemory::LoadSRTC (void)
 {
 	FILE	*fp;
-	size_t	ignore;
 
 	fp = fopen(S9xGetFilename(".rtc", SRAM_DIR), "rb");
 	if (!fp)
 		return (FALSE);
 
-	ignore = fread(RTCData.reg, 1, 20, fp);
+	fread(RTCData.reg, 1, 20, fp);
 	fclose(fp);
 
 	return (TRUE);
@@ -2003,13 +2002,12 @@ bool8 CMemory::LoadSRTC (void)
 bool8 CMemory::SaveSRTC (void)
 {
 	FILE	*fp;
-	size_t	ignore;
 
 	fp = fopen(S9xGetFilename(".rtc", SRAM_DIR), "wb");
 	if (!fp)
 		return (FALSE);
 
-	ignore = fwrite(RTCData.reg, 1, 20, fp);
+	fwrite(RTCData.reg, 1, 20, fp);
 	fclose(fp);
 
 	return (TRUE);
@@ -2136,11 +2134,10 @@ bool8 CMemory::SaveSRAM (const char *filename)
 		file = fopen(name, "wb");
 		if (file)
 		{
-			size_t	ignore;
-			ignore = fwrite((char *) Multi.sramB, size, 1, file);
+			fwrite((char *) Multi.sramB, size, 1, file);
 			fclose(file);
 		#ifdef __linux
-			ignore = chown(name, getuid(), getgid());
+			chown(name, getuid(), getgid());
 		#endif
 		}
 
@@ -2157,13 +2154,12 @@ bool8 CMemory::SaveSRAM (const char *filename)
 		file = fopen(sramName, "wb");
 		if (file)
 		{
-			size_t	ignore;
 			printf("Writing file %s.\n", sramName);
-			ignore = fwrite((char *) SRAM, 1, size, file);
+			fwrite((char *) SRAM, 1, size, file);
 			fclose(file);
 		#ifdef __linux
 		  printf("Changing permissions for file %s.\n", sramName);
-			ignore = chown(sramName, getuid(), getgid());
+			chown(sramName, getuid(), getgid());
 		#endif
 
 			if (Settings.SRTC || Settings.SPC7110RTC)

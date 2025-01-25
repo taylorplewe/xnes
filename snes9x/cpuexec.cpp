@@ -195,11 +195,11 @@ void S9xMainLoop (void)
 {
     // debugging variable?
     // static int loop_times=0;
-    int loops2=0;
+    // int loops2=0;
     //printf("Enter S9xMainLoop %d %x\n", loop_times, Registers.PCw);
 	for (;;)
 	{
-        loops2++;
+        // loops2++;
         //printf("S9xMainLoop %d for loop %d flags=%d\n", loop_times, loops2, CPU.Flags);
 		if (CPU.NMILine)
 		{

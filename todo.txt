@@ -1,0 +1,3 @@
+- nearest neighbor scaling
+- change keybindings
+- change canvas element height from 239 to 224

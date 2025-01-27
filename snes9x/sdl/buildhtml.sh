@@ -7,11 +7,12 @@ CCFLAGS="-U__linux -O3 -DLSB_FIRST  -fomit-frame-pointer -fno-exceptions -fno-rt
 
 emcc -O3 -s EXPORTED_FUNCTIONS="['_main', '_set_frameskip', '_set_transparency',  '_run',  '_toggle_display_framerate', '_S9xAutoSaveSRAM' ]" \
  -s FORCE_FILESYSTEM=1 \
- --shell-file xnes9x_shell.html \
+ --shell-file modern-ui-shell.html \
  -o $OUT/snes9x.html \
  -DUSE_SDL \
  -DHTML $INCLUDES $CCFLAGS $OBJECTS \
  -lm -lSDL -s TOTAL_MEMORY=50331648  \
  -DSOUND \
  -sEXPORTED_RUNTIME_METHODS=ccall,cwrap \
- -lidbfs.js
+ -lidbfs.js \
+ -v

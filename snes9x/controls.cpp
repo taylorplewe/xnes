@@ -1794,7 +1794,7 @@ bool S9xMapButton (uint32 id, s9xcommand_t mapping, bool poll)
 	return (true);
 }
 
-void S9xReportButton (uint32 id, bool pressed)
+extern "C" void S9xReportButton (uint32 id, bool pressed)
 {
 	if (keymap.count(id) == 0)
 		return;

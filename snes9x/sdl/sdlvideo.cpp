@@ -66,17 +66,19 @@
 struct GUIData
 {
     #ifdef USE_SDL
-	SDL_Surface             *sdl_screen;
-	uint8			*blit_screen;
-	uint32			blit_screen_pitch;
-     #endif
-     uint8			*snes_buffer;
-	int			video_mode;
-        bool8                   fullscreen;
+		SDL_Surface*  sdl_screen;
+		SDL_Renderer* sdl_renderer;
+		SDL_Window*   sdl_window;
+		uint8*        blit_screen;
+		uint32        blit_screen_pitch;
+    #endif
+    uint8*        snes_buffer;
+	int           video_mode;
+    bool8         fullscreen;
 };
-static struct GUIData	GUI;
+static struct GUIData GUI;
 
-typedef	void (* Blitter) (uint8 *, int, uint8 *, int, int, int);
+typedef	void (* Blitter) (uint8*, int, uint8*, int, int, int);
 
 enum
 {
@@ -108,100 +110,60 @@ void S9xExtraDisplayUsage (void)
 	S9xMessage(S9X_INFO, S9X_USAGE, "");
 }
 
-void S9xParseDisplayArg (char **argv, int &i, int argc)
-{
-#if 0
-	if (!strncasecmp(argv[i], "-fullscreen", 11))
-        {
-                GUI.fullscreen = TRUE;
-                printf ("Entering fullscreen mode (without scaling).\n");
-        }
-        else
-	if (!strncasecmp(argv[i], "-v", 2))
-	{
-		switch (argv[i][2])
-		{
-			case '1':	GUI.video_mode = VIDEOMODE_BLOCKY;		break;
-			case '2':	GUI.video_mode = VIDEOMODE_TV;			break;
-			case '3':	GUI.video_mode = VIDEOMODE_SMOOTH;		break;
-			case '4':	GUI.video_mode = VIDEOMODE_SUPEREAGLE;	break;
-			case '5':	GUI.video_mode = VIDEOMODE_2XSAI;		break;
-			case '6':	GUI.video_mode = VIDEOMODE_SUPER2XSAI;	break;
-			case '7':	GUI.video_mode = VIDEOMODE_EPX;			break;
-			case '8':	GUI.video_mode = VIDEOMODE_HQ2X;		break;
-		}
-	}
-	else
-		S9xUsage();
-#endif
-}
+void S9xParseDisplayArg (char** argv, int &i, int argc);
 
-const char * S9xParseDisplayConfig (ConfigFile &conf, int pass)
+const char* S9xParseDisplayConfig (ConfigFile &conf, int pass)
 {
-#if 0
-	if (pass != 1)
-		return ("Unix/SDL");
-
-	if (conf.Exists("Unix/SDL::VideoMode"))
-	{
-		GUI.video_mode = conf.GetUInt("Unix/SDL::VideoMode", VIDEOMODE_BLOCKY);
-		if (GUI.video_mode < 1 || GUI.video_mode > 8)
-			GUI.video_mode = VIDEOMODE_BLOCKY;
-	}
-	else
-		GUI.video_mode = VIDEOMODE_BLOCKY;
-#endif
     printf("parse display config\n");
 	return ("Unix/SDL");
-
 }
 
-static void FatalError (const char *str)
+static void FatalError (const char* str)
 {
 	fprintf(stderr, "%s\n", str);
 	S9xExit();
 }
 
-void S9xInitDisplay (int argc, char **argv)
+void S9xInitDisplay (int argc, char** argv)
 {
-#ifdef USE_SDL
-	if (SDL_Init(SDL_INIT_VIDEO) != 0)
-	{
-		printf("Unable to initialize SDL: %s\n", SDL_GetError());
-	}
+	#ifdef USE_SDL
+		if (SDL_Init(SDL_INIT_VIDEO) != 0)
+		{
+			printf("Unable to initialize SDL: %s\n", SDL_GetError());
+		}
 
-	atexit(SDL_Quit);
+		atexit(SDL_Quit);
 
-	/*
-	 * domaemon
-	 *
-	 * we just go along with RGB565 for now, nothing else..
-	 */
+		SDL_CreateWindowAndRenderer(
+			SNES_WIDTH * GFX_SCALE,
+			SNES_HEIGHT * GFX_SCALE,
+			0,
+			&GUI.sdl_window,
+			&GUI.sdl_renderer
+		);
+		GUI.sdl_screen = SDL_CreateRGBSurface(
+			0,
+			SNES_WIDTH * GFX_SCALE,
+			SNES_HEIGHT * GFX_SCALE,
+			BPP,
+			0, 0, 0, 0
+		);
+		// GUI.sdl_screen = SDL_SetVideoMode(SNES_WIDTH * GFX_SCALE, SNES_HEIGHT * GFX_SCALE, BPP, 0);
 
-    GUI.sdl_screen = SDL_SetVideoMode(SNES_WIDTH * GFX_SCALE, SNES_HEIGHT_EXTENDED * GFX_SCALE, BPP, 0);
-
-    if (GUI.sdl_screen == NULL)
-	{
-		printf("Unable to set video mode: %s\n", SDL_GetError());
-		exit(1);
-        }
-#endif
-    GUI.video_mode = VIDEOMODE_BLOCKY;
-	/*
-	 * domaemon
-	 *
-	 * buffer allocation, quite important
-	 */
-
+		if (GUI.sdl_screen == NULL) {
+			printf("Unable to set video mode: %s\n", SDL_GetError());
+			exit(1);
+		}
+	#endif
 	SetupImage();
 }
 
 void S9xDeinitDisplay (void)
 {
 	TakedownImage();
-#ifdef USE_SDL
-	SDL_Quit();
-#endif
+	#ifdef USE_SDL
+		SDL_Quit();
+	#endif
 
 }
 
@@ -212,7 +174,6 @@ static void TakedownImage (void)
 		free(GUI.snes_buffer);
 		GUI.snes_buffer = NULL;
 	}
-
 	S9xGraphicsDeinit();
 }
 
@@ -225,66 +186,45 @@ static void SetupImage (void)
 
 	GFX.Pitch = SNES_WIDTH * 2 * GFX_SCALE;
 
-	GUI.snes_buffer = (uint8 *) calloc(GFX.Pitch * ((SNES_HEIGHT_EXTENDED + 4) * GFX_SCALE), 1);
+	GUI.snes_buffer = (uint8*)calloc(GFX.Pitch * ((SNES_HEIGHT_EXTENDED + 4) * GFX_SCALE), 1);
 
 	if (!GUI.snes_buffer)
 		FatalError("Failed to allocate GUI.snes_buffer.");
 
 	// domaemon: Add 2 lines before drawing.
-	GFX.Screen = (uint16 *) (GUI.snes_buffer + (GFX.Pitch * 2 * GFX_SCALE));
-#ifdef USE_SDL
-    GUI.blit_screen       = (uint8 *) GUI.sdl_screen->pixels;
-    GUI.blit_screen_pitch = SNES_WIDTH  * GFX_SCALE * (BPP/8);
-#endif
+	GFX.Screen = (uint16*)(GUI.snes_buffer + (GFX.Pitch * 2 * GFX_SCALE));
+	#ifdef USE_SDL
+		GUI.blit_screen       = (uint8*)GUI.sdl_screen->pixels;
+		GUI.blit_screen_pitch = SNES_WIDTH * GFX_SCALE * (BPP/8);
+	#endif
 	S9xGraphicsInit();
-}
-void BlitRGB565toRGB32(uint16 *srcPtr, int srcRowBytes, uint32 *dstPtr, int dstRowBytes, int width, int height)
-{
-    int x;
-    unsigned int r,g,b;
-
-	for (; height; height--)
-	{
-        for(x=0;x<width;x++)
-        {
-            r=((srcPtr[x]>>11)&0x1f)<<3;
-            g=((srcPtr[x]>>5)&0x3f)<<2;
-            b=(srcPtr[x]&0x1f)<<3;
-#ifdef HTML
-            dstPtr[x]=(b<<16)|(g<<8)|r;
-#else
-            dstPtr[x]=(r<<16)|(g<<8)|b;
-#endif
-        }
-
-		srcPtr += (srcRowBytes/2);
-		dstPtr += (dstRowBytes/4);
-	}
 }
 
 void S9xPutImage (int width, int height)
 {
+	#ifdef USE_SDL
+		SDL_LockSurface(GUI.sdl_screen);
+		SDL_ConvertPixels(
+			width, height,
+			SDL_PIXELFORMAT_RGB565,
+			(uint32*)GFX.Screen,
+			GFX.Pitch,
+			SDL_PIXELFORMAT_RGB888,
+			(uint32*)GUI.blit_screen,
+			GUI.blit_screen_pitch
+		);
+		SDL_UnlockSurface(GUI.sdl_screen);
 
-	// Blitter		blitFn = NULL;
-  //   static int frames=0;
-#ifdef USE_SDL
-    SDL_LockSurface(GUI.sdl_screen);
-	// domaemon: this is place where the rendering buffer size should be changed?
-	BlitRGB565toRGB32((uint16 *) GFX.Screen, GFX.Pitch, (uint32 *) GUI.blit_screen, GUI.blit_screen_pitch, width, height);
-    SDL_UnlockSurface(GUI.sdl_screen);
-	SDL_Flip(GUI.sdl_screen);
-#endif
-#ifdef ASCII
-    static int frames=0;
-    drawansi (width, height, GFX.Screen, 16,GFX.Pitch);
-    printf("\n%d\n", frames++);
-    fflush(stdout);
-#endif
-
+		SDL_Texture* sdl_screen_texture = SDL_CreateTextureFromSurface(GUI.sdl_renderer, GUI.sdl_screen);
+		SDL_RenderClear(GUI.sdl_renderer);
+		SDL_RenderCopy(GUI.sdl_renderer, sdl_screen_texture, NULL, NULL);
+		SDL_RenderPresent(GUI.sdl_renderer);
+		SDL_DestroyTexture(sdl_screen_texture);
+	#endif
 }
 
 
-void S9xMessage (int type, int number, const char *message)
+void S9xMessage (int type, int number, const char* message)
 {
 	const int	max = 36 * 3;
 	static char	buffer[max + 1];
@@ -295,7 +235,7 @@ void S9xMessage (int type, int number, const char *message)
 	S9xSetInfoString(buffer);
 }
 
-const char * S9xStringInput (const char *message)
+const char* S9xStringInput (const char *message)
 {
 	static char	buffer[256];
 
@@ -308,12 +248,6 @@ const char * S9xStringInput (const char *message)
 	return (NULL);
 }
 
-void S9xSetTitle (const char *string)
-{
-	//SDL_WM_SetCaption(string, string);
-}
+void S9xSetTitle (const char *string) { }
 
-void S9xSetPalette (void)
-{
-	return;
-}
+void S9xSetPalette (void) { }

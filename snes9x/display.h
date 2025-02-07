@@ -218,6 +218,7 @@ const char * S9xGetFilename (const char *, enum s9x_getdirtype);
 const char * S9xGetFilenameInc (const char *, enum s9x_getdirtype);
 const char * S9xChooseFilename (bool8);
 const char * S9xBasename (const char *);
+void sdlvideo_resetguimode();
 
 // Routines the port has to implement if it uses command-line
 

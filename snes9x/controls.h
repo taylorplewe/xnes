@@ -351,7 +351,7 @@ void S9xUnmapID (uint32 id);
 // S9xMapButton() will fail and return FALSE if mapping.type isn't an S9xButton* type.
 
 bool S9xMapButton (uint32 id, s9xcommand_t mapping, bool poll);
-void S9xReportButton (uint32 id, bool pressed);
+extern "C" void S9xReportButton (uint32 id, bool pressed);
 
 // Pointer mapping functions.
 // If a pointer is mapped with poll=TRUE, then S9xPollPointer will be called whenever snes9x feels a need for that mapping.

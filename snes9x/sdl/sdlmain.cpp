@@ -606,7 +606,7 @@ void reboot_emulator(char *filename){
 	CPU.Flags = saved_flags;
 	Settings.StopEmulation = FALSE;
 
-	S9xInitInputDevices('d', 'a', 's', 'w', 13, 1249, 'l', 'k', 'i', 'j', 'm', 59);
+	S9xInitInputDevices('d', 'a', 's', 'w', 13, 1249, 'l', 'k', 'i', 'j', 'm', ';');
 	S9xInitDisplay(NULL, NULL);
 	sprintf(String, "\"%s\" %s: %s", Memory.ROMName, TITLE, VERSION);
 
@@ -632,6 +632,7 @@ void run(char *filename){
     S9xSetSoundMute(TRUE);
     #endif
     printf("start main loop\n");
+	emscripten_cancel_main_loop();
     emscripten_set_main_loop(mainloop, 0, 0);
 }
 
@@ -656,7 +657,8 @@ int main (int argc, char **argv)
 				console.log(err);
 			} else {
 				console.log('File system synced.');
-				window.initSNES();
+				//window.initSNES();
+				window.initSnesReady = true;
 			}
 		});
 	);
@@ -679,59 +681,54 @@ int main (int argc, char **argv)
 	Settings.StopEmulation = TRUE;
 	Settings.WrongMovieStateProtection = TRUE;
 	Settings.DumpStreamsMaxFrames = -1;
-  Settings.DisplayFrameRate = FALSE;
-  Settings.AutoDisplayMessages = TRUE;
+	Settings.DisplayFrameRate = FALSE;
+	Settings.AutoDisplayMessages = TRUE;
 	Settings.StretchScreenshots = 1;
 	Settings.SnapshotScreenshots = TRUE;
 	Settings.SkipFrames = 0;
 	Settings.TurboSkipFrames = 15;
 	Settings.CartAName[0] = 0;
 	Settings.CartBName[0] = 0;
-  Settings.NoPatch= TRUE;
-  Settings.SoundSync =  FALSE;
-#ifdef SOUND
-	Settings.Mute = FALSE;
-  Settings.SoundPlaybackRate = 22100;
-	Settings.SoundInputRate = 22100;
-#else
-  Settings.Mute = TRUE;
-  Settings.SoundPlaybackRate = 16000;
-	Settings.SoundInputRate = 16000;
-#endif
+	Settings.NoPatch= TRUE;
+	Settings.SoundSync =  FALSE;
+	#ifdef SOUND
+		Settings.Mute = FALSE;
+		Settings.SoundPlaybackRate = 22100;
+		Settings.SoundInputRate = 22100;
+	#else
+		Settings.Mute = TRUE;
+		Settings.SoundPlaybackRate = 16000;
+		Settings.SoundInputRate = 16000;
+	#endif
 	CPU.Flags = 0;    ;
-	if (!Memory.Init() || !S9xInitAPU())
-	{
+	if (!Memory.Init() || !S9xInitAPU()) {
 		fprintf(stderr, "Snes9x: Memory allocation failure - not enough RAM/virtual memory available.\nExiting...\n");
 		Memory.Deinit();
 		S9xDeinitAPU();
 		exit(1);
 	}
-    sound_buffer_size= 100;
+    sound_buffer_size = 100;
 	S9xInitSound(sound_buffer_size, 0);
 	S9xSetSoundMute(TRUE);
 
 	S9xReportControllers();
 
-#ifdef GFX_MULTI_FORMAT
-	S9xSetRenderPixelFormat(RGB565);
-#endif
-
-
+	#ifdef GFX_MULTI_FORMAT
+		S9xSetRenderPixelFormat(RGB565);
+	#endif
 	// domaemon: setting the title on the window bar
 
-#ifdef HTML
-       emscripten_exit_with_live_runtime();
-#else
-    	uint32	saved_flags = CPU.Flags;
+	#ifdef HTML
+    	emscripten_exit_with_live_runtime();
+	#else
+    uint32	saved_flags = CPU.Flags;
 	bool8	loaded = FALSE;
 
-	if (rom_filename)
-	{
+	if (rom_filename) {
 		loaded = Memory.LoadROM(rom_filename);
 	}
 
-	if (!loaded)
-	{
+	if (!loaded) {
 		fprintf(stderr, "Error opening the ROM file.\n");
 		exit(1);
 	}
@@ -740,34 +737,28 @@ int main (int argc, char **argv)
 
 	printf("Attempting to load SRAM %s.\n", S9xGetFilename(".srm", SRAM_DIR));
 	bool8 sramloaded = Memory.LoadSRAM(S9xGetFilename(".srm", SRAM_DIR));
-	if (sramloaded)
-	{
+	if (sramloaded) {
 		printf("Load successful.\n");
-	}
-	else
-	{
+	} else {
 		printf("Load failed.\n");
 	}
 
 	CPU.Flags = saved_flags;
 	Settings.StopEmulation = FALSE;
 
-	S9xInitInputDevices('d', 'a', 's', 'w', 13, 1249, 'l', 'k', 'i', 'j', 'm', 59);
+	S9xInitInputDevices('d', 'a', 's', 'w', 13, 1249, 'l', 'k', 'i', 'j', 'm', ';');
 	S9xInitDisplay(argc, argv);
 	sprintf(String, "\"%s\" %s: %s", Memory.ROMName, TITLE, VERSION);
 
     S9xSetTitle(String);
-#ifdef SOUND
-	S9xSetSoundMute(FALSE);
-#else
-    S9xSetSoundMute(TRUE);
-#endif
+	#ifdef SOUND
+		S9xSetSoundMute(FALSE);
+	#else
+    	S9xSetSoundMute(TRUE);
+	#endif
     printf("before start\n");
     printf("registers.pcw=%x\n", Registers.PCw);
-	int iters;
-	for(iters=0;iters<5000;iters++)
-	{
-
+	for (int iters = 0; iters < 5000; iters++){
         S9xMainLoop();
         S9xProcessEvents(FALSE);
 	}
